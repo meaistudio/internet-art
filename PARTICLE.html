@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>CMYK Scan + Blob</title>
+<style>
+    body {
+        margin: 0;
+        background: black;
+        overflow: hidden;
+        cursor: crosshair;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="cmykCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('cmykCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let scans = [];
+let blobs = [];
+const CMYK = ['cyan', 'magenta', 'yellow', 'white'];
+
+// Fungsi buat garis scan
+function createScan(x) {
+    const color = CMYK[Math.floor(Math.random() * CMYK.length)];
+    return {
+        x: x,
+        y: 0,
+        width: 500 + Math.random() * 40, // garis lebih lebar
+        height: canvas.height,
+        color: color,
+        speed: 2 + Math.random() * 3
+    };
+}
+
+// Fungsi buat blob
+function createBlob(x, y) {
+    const color = CMYK[Math.floor(Math.random() * CMYK.length)];
+    return {
+        x: x,
+        y: y,
+        radius: 20 + Math.random() * 30,
+        color: color,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4
+    };
+}
+
+// Event klik buat scan + blob
+canvas.addEventListener('click', (e) => {
+    scans.push(createScan(e.clientX));
+    blobs.push(createBlob(e.clientX, e.clientY));
+});
+
+function animate() {
+    ctx.fillStyle = 'rgba(0,0,0,0.05)'; // efek jejak samar
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Animate garis scan
+    scans.forEach((scan, index) => {
+        ctx.fillStyle = scan.color;
+        ctx.fillRect(scan.x, scan.y, scan.width, scan.height);
+        scan.y += scan.speed;
+        if(scan.y > canvas.height) scans.splice(index, 1);
+    });
+
+    // Animate blob
+    blobs.forEach((blob, index) => {
+        blob.x += blob.vx;
+        blob.y += blob.vy;
+
+        // pantul dari tepi
+        if(blob.x < 0 || blob.x > canvas.width) blob.vx *= -1;
+        if(blob.y < 0 || blob.y > canvas.height) blob.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
+        ctx.fillStyle = blob.color;
+        ctx.globalAlpha = 0.6; // transparansi untuk blending
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+// Resize canvas
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+</script>
+</body>
+</html>
