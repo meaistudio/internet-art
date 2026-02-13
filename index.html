@@ -2,90 +2,151 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>CMYK Scan + Blob</title>
+<title>10 Internet Art</title>
 <style>
     body {
         margin: 0;
+        font-family: sans-serif;
         background: black;
-        overflow: hidden;
-        cursor: crosshair;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    h1 { margin: 20px; text-align: center; }
+    .art-selection {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .art-button {
+        padding: 10px 20px;
+        background: #111;
+        border: 2px solid white;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .art-button:hover {
+        background: white;
+        color: black;
     }
     canvas {
         display: block;
+        border: 2px solid white;
+        margin-bottom: 20px;
     }
 </style>
 </head>
 <body>
-<canvas id="cmykCanvas"></canvas>
+<h1>10 Internet Art - Pilih untuk tampil</h1>
+<div class="art-selection">
+    <button class="art-button" data-art="1">CMYK Blob Scan 1</button>
+    <button class="art-button" data-art="2">CMYK Blob Scan 2</button>
+    <button class="art-button" data-art="3">CMYK Blob Scan 3</button>
+    <button class="art-button" data-art="4">Norak Abstrak 1</button>
+    <button class="art-button" data-art="5">Norak Abstrak 2</button>
+    <button class="art-button" data-art="6">Norak Abstrak 3</button>
+    <button class="art-button" data-art="7">Norak Abstrak 4</button>
+    <button class="art-button" data-art="8">Norak Abstrak 5</button>
+    <button class="art-button" data-art="9">Norak Abstrak 6</button>
+    <button class="art-button" data-art="10">Norak Abstrak 7</button>
+</div>
+
+<canvas id="artCanvas"></canvas>
 
 <script>
-const canvas = document.getElementById('cmykCanvas');
+const canvas = document.getElementById('artCanvas');
 const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth - 40;
+canvas.height = window.innerHeight - 200;
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const CMYK = ['cyan','magenta','yellow','white'];
+let currentArt = 1;
 
+// State untuk blob tracking
 let scans = [];
 let blobs = [];
-const CMYK = ['cyan', 'magenta', 'yellow', 'white'];
 
-// Fungsi buat garis scan
-function createScan(x) {
-    const color = CMYK[Math.floor(Math.random() * CMYK.length)];
-    return {
-        x: x,
-        y: 0,
-        width: 20 + Math.random() * 40, // garis lebih lebar
-        height: canvas.height,
-        color: color,
-        speed: 2 + Math.random() * 3
-    };
+// Reset state tiap ganti art
+function resetArt() {
+    scans = [];
+    blobs = [];
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Fungsi buat blob
-function createBlob(x, y) {
-    const color = CMYK[Math.floor(Math.random() * CMYK.length)];
-    return {
-        x: x,
-        y: y,
-        radius: 20 + Math.random() * 30,
-        color: color,
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() - 0.5) * 4
-    };
+// Fungsi untuk gambar static CMYK scan + blob
+function setupCMYKBlobArt(num=1) {
+    // garis scan
+    for(let i=0; i<10; i++){
+        scans.push({
+            x: 50 + i*80,
+            width: 20 + Math.random()*40,
+            color: CMYK[Math.floor(Math.random()*CMYK.length)]
+        });
+    }
+    // blob tracking
+    for(let i=0; i<5; i++){
+        blobs.push({
+            x: 100 + i*150,
+            y: 100 + i*80,
+            radius: 20 + Math.random()*30,
+            color: CMYK[Math.floor(Math.random()*CMYK.length)],
+            vx: (Math.random()-0.5)*3,
+            vy: (Math.random()-0.5)*3
+        });
+    }
 }
 
-// Event klik buat scan + blob
-canvas.addEventListener('click', (e) => {
-    scans.push(createScan(e.clientX));
-    blobs.push(createBlob(e.clientX, e.clientY));
+// Fungsi untuk gambar absurd norak ala Indonesia
+function setupNorakArt(num=1){
+    // membuat 10 bentuk random absurd
+    for(let i=0; i<15; i++){
+        blobs.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*canvas.height,
+            radius: 10 + Math.random()*50,
+            color: `hsl(${Math.random()*360}, 100%, 50%)`,
+            vx: 0,
+            vy: 0
+        });
+    }
+}
+
+// Event klik canvas → ganti warna
+canvas.addEventListener('click', () => {
+    if(currentArt <=3){ // CMYK blob scan
+        scans.forEach(s => s.color = CMYK[Math.floor(Math.random()*CMYK.length)]);
+        blobs.forEach(b => b.color = CMYK[Math.floor(Math.random()*CMYK.length)]);
+    } else { // norak abstrak
+        blobs.forEach(b => b.color = `hsl(${Math.random()*360}, 100%, 50%)`);
+    }
 });
 
-function animate() {
-    ctx.fillStyle = 'rgba(0,0,0,0.05)'; // efek jejak samar
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Animate loop untuk CMYK blob tracking
+function animate(){
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
 
-    // Animate garis scan
-    scans.forEach((scan, index) => {
-        ctx.fillStyle = scan.color;
-        ctx.fillRect(scan.x, scan.y, scan.width, scan.height);
-        scan.y += scan.speed;
-        if(scan.y > canvas.height) scans.splice(index, 1);
+    scans.forEach((s) => {
+        ctx.fillStyle = s.color;
+        ctx.fillRect(s.x, 0, s.width, canvas.height);
     });
 
-    // Animate blob
-    blobs.forEach((blob, index) => {
-        blob.x += blob.vx;
-        blob.y += blob.vy;
+    blobs.forEach((b) => {
+        b.x += b.vx;
+        b.y += b.vy;
 
         // pantul dari tepi
-        if(blob.x < 0 || blob.x > canvas.width) blob.vx *= -1;
-        if(blob.y < 0 || blob.y > canvas.height) blob.vy *= -1;
+        if(b.x-b.radius<0 || b.x+b.radius>canvas.width) b.vx*=-1;
+        if(b.y-b.radius<0 || b.y+b.radius>canvas.height) b.vy*=-1;
 
         ctx.beginPath();
-        ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
-        ctx.fillStyle = blob.color;
-        ctx.globalAlpha = 0.6; // transparansi untuk blending
+        ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);
+        ctx.fillStyle = b.color;
+        ctx.globalAlpha = 0.7;
         ctx.fill();
         ctx.globalAlpha = 1;
     });
@@ -93,12 +154,32 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
+// Tombol art selection
+document.querySelectorAll('.art-button').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+        currentArt = parseInt(btn.dataset.art);
+        resetArt();
+        if(currentArt <=3){
+            setupCMYKBlobArt(currentArt);
+        } else {
+            setupNorakArt(currentArt);
+        }
+    });
+});
+
+// Inisialisasi awal
+setupCMYKBlobArt();
 animate();
 
-// Resize canvas
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+window.addEventListener('resize', ()=>{
+    canvas.width = window.innerWidth - 40;
+    canvas.height = window.innerHeight - 200;
+    resetArt();
+    if(currentArt <=3){
+        setupCMYKBlobArt(currentArt);
+    } else {
+        setupNorakArt(currentArt);
+    }
 });
 </script>
 </body>
