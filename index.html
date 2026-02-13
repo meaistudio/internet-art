@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Pixel Map Gradasi</title>
+<title>Pixel Map CMYK Gradasi</title>
 <style>
     body {
         margin: 0;
@@ -25,7 +25,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Pixel map string
+// Map pixel
 const pixelMapString = `
 1111111111111111011011111111111111111111
 1111111111101111101010110011111111111111
@@ -69,13 +69,11 @@ const pixelMapString = `
 1111111111111111101101100001111111011011
 `;
 
-// Konversi menjadi array 2D
 const pixelMap = pixelMapString.trim().split('\n').map(line => line.split('').map(Number));
 
-// Pilih gradasi CMYK
-const baseColors = ['cyan', 'magenta', 'yellow', 'white'];
+// Warna CMYK
+const CMYK = ['cyan', 'magenta', 'yellow', 'white'];
 
-// Hitung ukuran pixel agar memenuhi layar
 function getPixelSize() {
     const rows = pixelMap.length;
     const cols = pixelMap[0].length;
@@ -84,7 +82,6 @@ function getPixelSize() {
     return Math.min(sizeX, sizeY);
 }
 
-// Draw pixel map dengan gradasi
 function drawPixelMap() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -99,15 +96,30 @@ function drawPixelMap() {
     for(let y=0; y<rows; y++){
         for(let x=0; x<cols; x++){
             if(pixelMap[y][x] === 1){
-                // Buat gradasi horizontal atau vertical
-                const grad = ctx.createLinearGradient(
-                    offsetX + x*pixelSize, offsetY + y*pixelSize, // start
-                    offsetX + x*pixelSize + pixelSize, offsetY + y*pixelSize + pixelSize // end
-                );
+                // Pilih 2 warna CMYK random
+                const color1 = CMYK[Math.floor(Math.random()*CMYK.length)];
+                let color2 = CMYK[Math.floor(Math.random()*CMYK.length)];
+                // pastikan tidak sama
+                while(color2 === color1) color2 = CMYK[Math.floor(Math.random()*CMYK.length)];
 
-                // Bisa pakai gradasi vertikal juga: ganti koordinat start/end
-                grad.addColorStop(0, baseColors[(x + y) % baseColors.length]);
-                grad.addColorStop(1, 'black');
+                // Pilih arah gradasi random
+                const horizontal = Math.random() < 0.5;
+
+                let grad;
+                if(horizontal){
+                    grad = ctx.createLinearGradient(
+                        offsetX + x*pixelSize, offsetY + y*pixelSize,
+                        offsetX + x*pixelSize + pixelSize, offsetY + y*pixelSize
+                    );
+                } else {
+                    grad = ctx.createLinearGradient(
+                        offsetX + x*pixelSize, offsetY + y*pixelSize,
+                        offsetX + x*pixelSize, offsetY + y*pixelSize + pixelSize
+                    );
+                }
+
+                grad.addColorStop(0, color1);
+                grad.addColorStop(1, color2);
 
                 ctx.fillStyle = grad;
                 ctx.fillRect(offsetX + x*pixelSize, offsetY + y*pixelSize, pixelSize, pixelSize);
@@ -118,7 +130,6 @@ function drawPixelMap() {
 
 // Klik untuk regenerasi gradasi
 canvas.addEventListener('click', drawPixelMap);
-
 window.addEventListener('resize', drawPixelMap);
 
 drawPixelMap();
