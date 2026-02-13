@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Pixeru</title>
+<title>Dynamic Gradient Pixel Map</title>
 <style>
     body {
         margin: 0;
@@ -74,66 +74,93 @@ const pixelMap = pixelMapString.trim().split('\n').map(line => line.split('').ma
 // Warna CMYK
 const CMYK = ['cyan', 'magenta', 'yellow', 'white'];
 
-function getPixelSize() {
+// Array untuk menyimpan data gradasi tiap pixel
+let pixels = [];
+
+function initPixels() {
+    pixels = [];
     const rows = pixelMap.length;
     const cols = pixelMap[0].length;
     const sizeX = canvas.width / cols;
     const sizeY = canvas.height / rows;
-    return Math.min(sizeX, sizeY);
-}
+    const pixelSize = Math.min(sizeX, sizeY);
 
-function drawPixelMap() {
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (pixelMap[y][x] === 1) {
+                // Set awal warna
+                const color1 = CMYK[Math.floor(Math.random() * CMYK.length)];
+                const color2 = CMYK[Math.floor(Math.random() * CMYK.length)];
 
-    const pixelSize = getPixelSize();
-    const offsetX = (canvas.width - pixelMap[0].length * pixelSize) / 2;
-    const offsetY = (canvas.height - pixelMap.length * pixelSize) / 2;
+                // arah gradasi random 0 = horizontal, 1 = vertical
+                const direction = Math.random() < 0.5 ? 'horizontal' : 'vertical';
 
-    const rows = pixelMap.length;
-    const cols = pixelMap[0].length;
-
-    for(let y=0; y<rows; y++){
-        for(let x=0; x<cols; x++){
-            if(pixelMap[y][x] === 1){
-                // Pilih 2 warna CMYK random
-                const color1 = CMYK[Math.floor(Math.random()*CMYK.length)];
-                let color2 = CMYK[Math.floor(Math.random()*CMYK.length)];
-                // pastikan tidak sama
-                while(color2 === color1) color2 = CMYK[Math.floor(Math.random()*CMYK.length)];
-
-                // Pilih arah gradasi random
-                const horizontal = Math.random() < 0.5;
-
-                let grad;
-                if(horizontal){
-                    grad = ctx.createLinearGradient(
-                        offsetX + x*pixelSize, offsetY + y*pixelSize,
-                        offsetX + x*pixelSize + pixelSize, offsetY + y*pixelSize
-                    );
-                } else {
-                    grad = ctx.createLinearGradient(
-                        offsetX + x*pixelSize, offsetY + y*pixelSize,
-                        offsetX + x*pixelSize, offsetY + y*pixelSize + pixelSize
-                    );
-                }
-
-                grad.addColorStop(0, color1);
-                grad.addColorStop(1, color2);
-
-                ctx.fillStyle = grad;
-                ctx.fillRect(offsetX + x*pixelSize, offsetY + y*pixelSize, pixelSize, pixelSize);
+                pixels.push({
+                    x, y,
+                    size: pixelSize,
+                    color1,
+                    color2,
+                    direction,
+                    offset: Math.random() // untuk animasi gradasi
+                });
             }
         }
     }
 }
 
-// Klik untuk regenerasi gradasi
-canvas.addEventListener('click', drawPixelMap);
-window.addEventListener('resize', drawPixelMap);
+function draw() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-drawPixelMap();
+    const rows = pixelMap.length;
+    const cols = pixelMap[0].length;
+    const pixelSize = Math.min(canvas.width / cols, canvas.height / rows);
+    const offsetX = (canvas.width - cols * pixelSize) / 2;
+    const offsetY = (canvas.height - rows * pixelSize) / 2;
+
+    pixels.forEach(p => {
+        // buat gradasi bergerak dengan offset
+        let grad;
+        if (p.direction === 'horizontal') {
+            grad = ctx.createLinearGradient(
+                offsetX + p.x * pixelSize + pixelSize * p.offset, offsetY + p.y * pixelSize,
+                offsetX + p.x * pixelSize + pixelSize * (1 + p.offset), offsetY + p.y * pixelSize
+            );
+        } else {
+            grad = ctx.createLinearGradient(
+                offsetX + p.x * pixelSize, offsetY + p.y * pixelSize + pixelSize * p.offset,
+                offsetX + p.x * pixelSize, offsetY + p.y * pixelSize + pixelSize * (1 + p.offset)
+            );
+        }
+
+        grad.addColorStop(0, p.color1);
+        grad.addColorStop(1, p.color2);
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(offsetX + p.x * pixelSize, offsetY + p.y * pixelSize, pixelSize, pixelSize);
+
+        // update offset untuk animasi
+        p.offset += 0.01;
+        if (p.offset > 1) p.offset = 0;
+    });
+
+    requestAnimationFrame(draw);
+}
+
+// Klik untuk regenerasi warna & arah gradasi
+canvas.addEventListener('click', () => initPixels());
+
+// Resize window → pixel tetap proporsional
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initPixels();
+});
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+initPixels();
+draw();
 </script>
 </body>
 </html>
-
