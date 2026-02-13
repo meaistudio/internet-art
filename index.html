@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Pixel Map Art</title>
+<title>Dynamic Pixel Map Art</title>
 <style>
     body {
         margin: 0;
@@ -16,16 +16,16 @@
 </style>
 </head>
 <body>
-<canvas id="pixelCanvas"></canvas>
+<canvas id="dynamicCanvas"></canvas>
 
 <script>
-const canvas = document.getElementById('pixelCanvas');
+const canvas = document.getElementById('dynamicCanvas');
 const ctx = canvas.getContext('2d');
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Map pixel baru (gunakan string array)
+// Map pixel dari input sebelumnya
 const pixelMapString = `
 1111111111111111011011111111111111111111
 1111111111101111101010110011111111111111
@@ -74,42 +74,78 @@ const pixelMap = pixelMapString.trim().split('\n').map(line => line.split('').ma
 
 const CMYK = ['cyan', 'magenta', 'yellow', 'white'];
 
-// Hitung ukuran pixel otomatis supaya memenuhi layar
-function getPixelSize() {
+// Array untuk menyimpan pixel dinamis
+let pixels = [];
+
+function initPixels() {
+    pixels = [];
     const rows = pixelMap.length;
     const cols = pixelMap[0].length;
     const sizeX = canvas.width / cols;
     const sizeY = canvas.height / rows;
-    return Math.min(sizeX, sizeY);
-}
+    const pixelSize = Math.min(sizeX, sizeY);
 
-// Draw pixel art
-function drawPixelArt() {
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const pixelSize = getPixelSize();
-    const offsetX = (canvas.width - pixelMap[0].length * pixelSize) / 2;
-    const offsetY = (canvas.height - pixelMap.length * pixelSize) / 2;
-
-    for(let y=0; y<pixelMap.length; y++){
-        for(let x=0; x<pixelMap[y].length; x++){
+    for(let y=0; y<rows; y++){
+        for(let x=0; x<cols; x++){
             if(pixelMap[y][x] === 1){
-                ctx.fillStyle = CMYK[Math.floor(Math.random() * CMYK.length)];
-                ctx.fillRect(offsetX + x*pixelSize, offsetY + y*pixelSize, pixelSize, pixelSize);
+                pixels.push({
+                    x: x*pixelSize,
+                    y: y*pixelSize,
+                    size: pixelSize,
+                    color: CMYK[Math.floor(Math.random()*CMYK.length)],
+                    vx: (Math.random()-0.5)*2, // gerakan horizontal
+                    vy: (Math.random()-0.5)*2  // gerakan vertical
+                });
             }
         }
     }
 }
 
-// Klik untuk ganti warna
-canvas.addEventListener('click', drawPixelArt);
+// Draw frame
+function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.1)'; // jejak samar
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// Draw pertama
-drawPixelArt();
+    pixels.forEach(p => {
+        // Draw gradasi sederhana
+        const grad = ctx.createRadialGradient(p.x + p.size/2, p.y + p.size/2, 0, p.x + p.size/2, p.y + p.size/2, p.size/2);
+        grad.addColorStop(0, p.color);
+        grad.addColorStop(1, 'black');
+        ctx.fillStyle = grad;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
 
-// Resize canvas
-window.addEventListener('resize', drawPixelArt);
+        // Update posisi
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Tetap di dalam canvas
+        if(p.x < 0) { p.x = 0; p.vx *= -1; }
+        if(p.x + p.size > canvas.width) { p.x = canvas.width - p.size; p.vx *= -1; }
+        if(p.y < 0) { p.y = 0; p.vy *= -1; }
+        if(p.y + p.size > canvas.height) { p.y = canvas.height - p.size; p.vy *= -1; }
+    });
+
+    requestAnimationFrame(draw);
+}
+
+// Klik untuk reset warna
+canvas.addEventListener('click', () => {
+    pixels.forEach(p => {
+        p.color = CMYK[Math.floor(Math.random()*CMYK.length)];
+    });
+});
+
+// Resize
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initPixels();
+});
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+initPixels();
+draw();
 </script>
 </body>
 </html>
