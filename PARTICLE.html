@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>CMYK Scan + Blob</title>
+<title>CMYK Static Scan</title>
 <style>
     body {
         margin: 0;
@@ -25,80 +25,72 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let scans = [];
-let blobs = [];
 const CMYK = ['cyan', 'magenta', 'yellow', 'white'];
 
-// Fungsi buat garis scan
-function createScan(x) {
-    const color = CMYK[Math.floor(Math.random() * CMYK.length)];
-    return {
-        x: x,
-        y: 0,
-        width: 500 + Math.random() * 40, // garis lebih lebar
-        height: canvas.height,
-        color: color,
-        speed: 2 + Math.random() * 3
-    };
+// Buat array garis statis
+let scans = [];
+const numScans = 10; // jumlah garis
+for(let i=0; i<numScans; i++){
+    scans.push({
+        x: 50 + i*100,
+        width: 40,
+        color: CMYK[Math.floor(Math.random() * CMYK.length)]
+    });
 }
 
-// Fungsi buat blob
-function createBlob(x, y) {
-    const color = CMYK[Math.floor(Math.random() * CMYK.length)];
-    return {
-        x: x,
-        y: y,
-        radius: 20 + Math.random() * 30,
-        color: color,
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() - 0.5) * 4
-    };
+// Buat array blob statis
+let blobs = [];
+const numBlobs = 5;
+for(let i=0; i<numBlobs; i++){
+    blobs.push({
+        x: 100 + i*200,
+        y: 100 + i*80,
+        radius: 30 + Math.random()*20,
+        color: CMYK[Math.floor(Math.random() * CMYK.length)]
+    });
 }
 
-// Event klik buat scan + blob
-canvas.addEventListener('click', (e) => {
-    scans.push(createScan(e.clientX));
-    blobs.push(createBlob(e.clientX, e.clientY));
-});
-
-function animate() {
-    ctx.fillStyle = 'rgba(0,0,0,0.05)'; // efek jejak samar
+// Fungsi gambar static
+function draw() {
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Animate garis scan
-    scans.forEach((scan, index) => {
+    // Gambar garis scan
+    scans.forEach(scan => {
         ctx.fillStyle = scan.color;
-        ctx.fillRect(scan.x, scan.y, scan.width, scan.height);
-        scan.y += scan.speed;
-        if(scan.y > canvas.height) scans.splice(index, 1);
+        ctx.fillRect(scan.x, 0, scan.width, canvas.height);
     });
 
-    // Animate blob
-    blobs.forEach((blob, index) => {
-        blob.x += blob.vx;
-        blob.y += blob.vy;
-
-        // pantul dari tepi
-        if(blob.x < 0 || blob.x > canvas.width) blob.vx *= -1;
-        if(blob.y < 0 || blob.y > canvas.height) blob.vy *= -1;
-
+    // Gambar blob
+    blobs.forEach(blob => {
         ctx.beginPath();
-        ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
+        ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI*2);
         ctx.fillStyle = blob.color;
-        ctx.globalAlpha = 0.6; // transparansi untuk blending
+        ctx.globalAlpha = 0.7;
         ctx.fill();
         ctx.globalAlpha = 1;
     });
-
-    requestAnimationFrame(animate);
 }
 
-animate();
+// Klik mouse → ganti warna random
+canvas.addEventListener('click', () => {
+    scans.forEach(scan => {
+        scan.color = CMYK[Math.floor(Math.random() * CMYK.length)];
+    });
+    blobs.forEach(blob => {
+        blob.color = CMYK[Math.floor(Math.random() * CMYK.length)];
+    });
+    draw();
+});
+
+// Draw pertama kali
+draw();
 
 // Resize canvas
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    draw();
 });
 </script>
 </body>
